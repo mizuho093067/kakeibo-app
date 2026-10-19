@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+
+# APIキーなどの秘密情報（.env.example だけはコミットする）
+.env
+.env.*
+!.env.example
