@@ -3,6 +3,7 @@ import ReceiptUploader from "./components/ReceiptUploader.jsx";
 import ReceiptReview from "./components/ReceiptReview.jsx";
 import ReceiptList from "./components/ReceiptList.jsx";
 import CategoryChart from "./components/CategoryChart.jsx";
+import CategoryBarChart from "./components/CategoryBarChart.jsx";
 import MonthlyChart from "./components/MonthlyChart.jsx";
 import { loadReceipts, saveReceipts } from "./storage.js";
 
@@ -34,6 +35,7 @@ function App() {
   const activeMonth = months.includes(selectedMonth) ? selectedMonth : "all";
   const filtered =
     activeMonth === "all" ? receipts : receipts.filter((r) => r.date.startsWith(activeMonth));
+  const filteredItems = filtered.flatMap((r) => r.items);
   const periodLabel =
     activeMonth === "all"
       ? "すべての期間"
@@ -72,9 +74,11 @@ function App() {
       </div>
 
       <div className="chart-grid">
-        <CategoryChart items={filtered.flatMap((r) => r.items)} periodLabel={periodLabel} />
+        <CategoryChart items={filteredItems} periodLabel={periodLabel} />
         <MonthlyChart receipts={receipts} />
       </div>
+
+      <CategoryBarChart items={filteredItems} periodLabel={periodLabel} />
 
       <ReceiptList receipts={filtered} onDelete={deleteReceipt} />
     </div>

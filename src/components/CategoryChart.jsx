@@ -1,7 +1,7 @@
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Pie } from "react-chartjs-2";
-import { CATEGORIES } from "../../shared/categories.js";
 import { categoryColor, chromeColors, formatYen, useDarkMode } from "../chartTheme.js";
+import { categoryTotals } from "../summary.js";
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -11,10 +11,7 @@ function CategoryChart({ items, periodLabel }) {
   const chrome = chromeColors(isDark);
 
   // カテゴリごとに金額を合計する（金額が 0 以下のカテゴリは除く）
-  const totals = CATEGORIES.map((category) => ({
-    category,
-    amount: items.filter((item) => item.category === category).reduce((sum, item) => sum + item.price, 0),
-  })).filter((row) => row.amount > 0);
+  const totals = categoryTotals(items);
   const grandTotal = totals.reduce((sum, row) => sum + row.amount, 0);
 
   const percent = (amount) => (grandTotal > 0 ? Math.round((amount / grandTotal) * 100) : 0);

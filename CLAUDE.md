@@ -67,12 +67,14 @@ kakeibo-app/
     ├── storage.js              # localStorage への保存・読み込み
     ├── image.js                # 画像の縮小と base64 変換
     ├── validation.js           # 検証（負の金額・重複レシート）と合計金額の計算
+    ├── summary.js              # カテゴリ別の集計（グラフ共通）
     ├── chartTheme.js           # グラフの色・ダークモード判定・金額の表示形式
     └── components/
         ├── ReceiptUploader.jsx # レシート画像の選択と読み取り
         ├── ReceiptReview.jsx   # 読み取り結果の確認・修正・登録
         ├── ReceiptList.jsx     # 登録したレシートの一覧
         ├── CategoryChart.jsx   # カテゴリ別の円グラフと集計表
+        ├── CategoryBarChart.jsx # カテゴリ別の横棒グラフ（金額の大きい順）
         └── MonthlyChart.jsx    # 月別の棒グラフ
 ```
 
@@ -96,7 +98,8 @@ kakeibo-app/
 
 - JavaScript は `const` / `let` を使用し、`var` は使わない。
 - 変数名・関数名はキャメルケース（例: `addReceipt`, `itemTotal`）。
-- レシートの合計金額は `validation.js` の `receiptTotal()` を使い、同じ計算を各所に書かない。
+- レシートの合計金額は `validation.js` の `receiptTotal()`、カテゴリ別の合計は `summary.js` の `categoryTotals()` を使い、同じ計算を各所に書かない。
+- グラフの色は `chartTheme.js` の `categoryColor()` でカテゴリに固定で結びつけ、どのグラフでも同じカテゴリは同じ色にする。
 - コンポーネントはパスカルケースで `src/components/` に1ファイル1コンポーネント。イベント用 props は `on` + 動詞、内部のイベント処理は `handle` + イベント名。
 - state は直接書き換えず、新しい配列・オブジェクトを作って更新する。
 - 金額は整数（円単位）で扱い、小数による計算誤差を避ける。値引きはマイナスの金額の商品として扱う。
@@ -126,7 +129,7 @@ const receipts = [
   - 金額がマイナスの商品があれば警告する（値引きの行は正常なので、エラーにはしない）
   - 同じ日時・合計金額のレシートが登録済みなら重複警告を出し、登録時に確認ダイアログを出す（時刻はどちらかが未入力なら日付だけで比べる）
 - 登録したレシートと商品を一覧表示・削除する
-- カテゴリ別の円グラフと集計表、月別の棒グラフを表示する（月で絞り込み可）
+- カテゴリ別の円グラフと集計表、カテゴリ別の横棒グラフ（金額の大きい順）、月別の棒グラフを表示する（月で絞り込み可。月別の棒グラフは常に全期間）
 - データは localStorage に保存し、再読み込みしても残る
 
 ## 注意事項
