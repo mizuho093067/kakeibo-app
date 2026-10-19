@@ -47,7 +47,12 @@ function App() {
       </header>
 
       {readResult ? (
-        <ReceiptReview result={readResult} onSave={addReceipt} onCancel={() => setReadResult(null)} />
+        <ReceiptReview
+          result={readResult}
+          receipts={receipts}
+          onSave={addReceipt}
+          onCancel={() => setReadResult(null)}
+        />
       ) : (
         <ReceiptUploader onRead={setReadResult} />
       )}

@@ -1,6 +1,7 @@
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { barColor, chromeColors, formatYen, useDarkMode } from "../chartTheme.js";
+import { receiptTotal } from "../validation.js";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
@@ -22,8 +23,7 @@ function MonthlyChart({ receipts }) {
   const totalsByMonth = {};
   for (const receipt of receipts) {
     const month = receipt.date.slice(0, 7);
-    const sum = receipt.items.reduce((s, item) => s + item.price, 0);
-    totalsByMonth[month] = (totalsByMonth[month] ?? 0) + sum;
+    totalsByMonth[month] = (totalsByMonth[month] ?? 0) + receiptTotal(receipt);
   }
 
   // 最初の月から最後の月まで、データのない月も 0 として並べる

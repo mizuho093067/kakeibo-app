@@ -11,6 +11,9 @@
   --accent-text: #ffffff;
   --error: #b42323;
   --error-bg: #fdeceb;
+  --warning: #7a5200;
+  --warning-bg: #fff4d6;
+  --warning-border: #fab219;
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
 }
 
@@ -27,6 +30,8 @@
     --accent: #3987e5;
     --error: #f08a8a;
     --error-bg: #3a1c1c;
+    --warning: #f5c96a;
+    --warning-bg: #33290f;
   }
 }
 
@@ -84,6 +89,31 @@ body {
   background: var(--error-bg);
   padding: 8px 12px;
   border-radius: 8px;
+}
+
+/* 警告（登録は可能だが確認してほしい内容） */
+.warning-message {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning-border);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.warning-message ul,
+.warning-message p {
+  margin: 6px 0 0;
+}
+
+.warning-message ul {
+  padding-left: 1.4em;
+}
+
+.item-price.negative {
+  border-color: var(--warning-border);
+  border-width: 2px;
 }
 
 /* ボタン類 */

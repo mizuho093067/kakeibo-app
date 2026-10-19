@@ -19,6 +19,7 @@ const ReceiptSchema = z.object({
   isReceipt: z.boolean().describe("画像がレシートとして読み取れる場合は true"),
   storeName: z.string().describe("店名。読み取れなければ空文字"),
   date: z.string().describe("購入日（YYYY-MM-DD）。読み取れなければ空文字"),
+  time: z.string().describe("購入時刻（24時間表記の HH:MM）。読み取れなければ空文字"),
   items: z.array(
     z.object({
       name: z.string().describe("商品名"),
@@ -31,7 +32,7 @@ const ReceiptSchema = z.object({
 });
 
 const SYSTEM_PROMPT = `あなたは日本のレシートを読み取って家計簿に登録するアシスタントです。
-画像から店名・購入日・商品ごとの名前と金額・合計金額を読み取ってください。
+画像から店名・購入日・購入時刻・商品ごとの名前と金額・合計金額を読み取ってください。
 
 ルール:
 - 金額は円単位の整数にする（「¥」「,」などは付けない）。
@@ -39,6 +40,7 @@ const SYSTEM_PROMPT = `あなたは日本のレシートを読み取って家計
 - 値引き・割引の行は、マイナスの金額の商品として含める（カテゴリは値引き対象の商品に合わせる）。
 - 小計・合計・お預かり・お釣り・ポイント・消費税の内訳の行は商品に含めない。
 - 日付は YYYY-MM-DD 形式にする。和暦（令和など）は西暦に直す。
+- 時刻は 24時間表記の HH:MM 形式にする（例: 午後3時5分 → 15:05）。
 - カテゴリは次から選ぶ: ${CATEGORIES.join("、")}
   - 食費: スーパー等で買う食材・お惣菜・お菓子
   - 外食: 飲食店での食事・テイクアウト・カフェ
