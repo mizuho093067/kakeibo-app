@@ -20,6 +20,9 @@ function ReceiptReview({ result, receipts, onSave, onCancel }) {
   const [items, setItems] = useState(() =>
     result.items.map((item) => ({ ...item, id: crypto.randomUUID() }))
   );
+  // サーバーへの保存中・保存失敗の状態
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // 登録される予定のレシート（商品名が空の行は除く）
   const draft = {
@@ -43,13 +46,21 @@ function ReceiptReview({ result, receipts, onSave, onCancel }) {
     setItems(items.filter((item) => item.id !== id));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (draft.items.length === 0) return;
+    if (saving || draft.items.length === 0) return;
     if (duplicate && !confirm("同じ日時・合計金額のレシートが既にあります。それでも登録しますか？")) {
       return;
     }
-    onSave({ ...draft, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave({ ...draft, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+    } catch (err) {
+      // 保存に失敗したら入力内容は残したまま、もう一度登録できるようにする
+      setSaveError(err.message);
+      setSaving(false);
+    }
   }
 
   return (
@@ -137,9 +148,15 @@ function ReceiptReview({ result, receipts, onSave, onCancel }) {
           </div>
         )}
 
+        {saveError && <p className="error-message">登録できませんでした: {saveError}</p>}
+
         <div className="review-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>キャンセル</button>
-          <button type="submit" className="primary-button">登録する</button>
+          <button type="button" className="secondary-button" onClick={onCancel} disabled={saving}>
+            キャンセル
+          </button>
+          <button type="submit" className="primary-button" disabled={saving}>
+            {saving ? "保存中…" : "登録する"}
+          </button>
         </div>
       </form>
     </section>

@@ -91,6 +91,26 @@ body {
   border-radius: 8px;
 }
 
+/* お知らせ（データ移行の結果など） */
+.notice-message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* 警告（登録は可能だが確認してほしい内容） */
 .warning-message {
   color: var(--warning);

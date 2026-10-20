@@ -5,28 +5,56 @@ import ReceiptList from "./components/ReceiptList.jsx";
 import CategoryChart from "./components/CategoryChart.jsx";
 import CategoryBarChart from "./components/CategoryBarChart.jsx";
 import MonthlyChart from "./components/MonthlyChart.jsx";
-import { loadReceipts, saveReceipts } from "./storage.js";
+import { createReceipt, fetchReceipts, migrateLocalReceipts, removeReceipt } from "./storage.js";
 
 function App() {
-  // 登録済みのレシート（初回はローカルストレージから読み込む）
-  const [receipts, setReceipts] = useState(loadReceipts);
+  // 登録済みのレシート（サーバーから読み込む）
+  const [receipts, setReceipts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  // 移行・削除などの結果のお知らせ
+  const [notice, setNotice] = useState("");
   // Claude の読み取り結果（確認中のもの）
   const [readResult, setReadResult] = useState(null);
   // 一覧・円グラフの対象月（"all" はすべての期間）
   const [selectedMonth, setSelectedMonth] = useState("all");
 
-  // レシートが変わるたびにローカルストレージへ保存する
+  // 初回表示時: 古いブラウザ保存データをサーバーへ移してから、全データを読み込む
   useEffect(() => {
-    saveReceipts(receipts);
-  }, [receipts]);
+    let ignore = false;
+    async function load() {
+      try {
+        const migrated = await migrateLocalReceipts();
+        const data = await fetchReceipts();
+        if (ignore) return;
+        setReceipts(data);
+        if (migrated > 0) setNotice(`ブラウザに保存されていたレシート ${migrated} 件をサーバーに移しました。`);
+      } catch (err) {
+        if (!ignore) setLoadError(err.message);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
-  function addReceipt(receipt) {
-    setReceipts([...receipts, receipt]);
+  // サーバーに保存できてから画面に反映する（失敗したら例外を呼び出し元へ返す）
+  async function addReceipt(receipt) {
+    const saved = await createReceipt(receipt);
+    setReceipts((current) => [...current, saved]);
     setReadResult(null);
   }
 
-  function deleteReceipt(id) {
-    setReceipts(receipts.filter((receipt) => receipt.id !== id));
+  async function deleteReceipt(id) {
+    try {
+      await removeReceipt(id);
+      setReceipts((current) => current.filter((receipt) => receipt.id !== id));
+    } catch (err) {
+      setNotice(`削除できませんでした: ${err.message}`);
+    }
   }
 
   // データのある月の一覧（新しい順）
@@ -48,6 +76,18 @@ function App() {
         <p>レシートを撮影するだけで、AI が自動で家計簿に登録します</p>
       </header>
 
+      {loadError && (
+        <p className="error-message">
+          データを読み込めませんでした: {loadError}（サーバーを起動してからページを再読み込みしてください）
+        </p>
+      )}
+      {notice && (
+        <p className="notice-message">
+          {notice}
+          <button className="delete-button" onClick={() => setNotice("")} aria-label="お知らせを閉じる">×</button>
+        </p>
+      )}
+
       {readResult ? (
         <ReceiptReview
           result={readResult}
@@ -62,7 +102,7 @@ function App() {
       <div className="month-filter">
         <label>
           表示する月
-          <select value={activeMonth}onChange={(e) => setSelectedMonth(e.target.value)}>
+          <select value={activeMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
             <option value="all">すべての期間</option>
             {months.map((m) => (
               <option key={m} value={m}>
@@ -80,7 +120,11 @@ function App() {
 
       <CategoryBarChart items={filteredItems} periodLabel={periodLabel} />
 
-      <ReceiptList receipts={filtered} onDelete={deleteReceipt} />
+      {loading ? (
+        <p className="status">データを読み込んでいます…</p>
+      ) : (
+        <ReceiptList receipts={filtered} onDelete={deleteReceipt} />
+      )}
     </div>
   );
 }

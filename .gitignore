@@ -2,6 +2,9 @@ node_modules/
 dist/
 *.log
 
+# 保存したレシートデータ（個人の家計データなのでコミットしない）
+data/
+
 # APIキーなどの秘密情報（.env.example だけはコミットする）
 .env
 .env.*

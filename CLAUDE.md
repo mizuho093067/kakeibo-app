@@ -16,7 +16,7 @@
 | グラフ | Chart.js + react-chartjs-2 | カテゴリ別の円グラフ・月別の棒グラフ |
 | バックエンド | Node.js 24 + Express 5 | Claude API を呼ぶのはバックエンドだけ |
 | AI | Claude API（モデル: `claude-haiku-5-5`） | 構造化出力（zod）でレシート内容を JSON で受け取る |
-| データ保存 | ブラウザの localStorage | キー: `kakeibo-app.receipts` |
+| データ保存 | サーバーの JSON ファイル（`data/receipts.json`） | バックエンドが読み書きする。データベースは使っていない |
 
 - 外部ライブラリは必要になるまで追加しない。追加する場合は理由をユーザーに説明してから入れる。
 - モデルは「Claude Haiku の最新版」を使う方針。新しい Haiku が出たら `server/receipt.js` の `MODEL` を更新する。
@@ -59,12 +59,13 @@ kakeibo-app/
 │   └── categories.js           # カテゴリ一覧（フロント・バック共通）
 ├── server/
 │   ├── index.js                # Express サーバー（API とビルド済み画面の配信）
-│   └── receipt.js              # Claude API でレシートを読み取る処理
+│   ├── receipt.js              # Claude API でレシートを読み取る処理
+│   └── store.js                # レシートデータの保存（data/receipts.json）と検証
 └── src/
     ├── main.jsx                # React の起動処理
     ├── App.jsx                 # 状態管理（レシートの追加・削除・保存、月の絞り込み）
     ├── App.css                 # スタイル（ライト / ダークモード対応）
-    ├── storage.js              # localStorage への保存・読み込み
+    ├── storage.js              # 保存データ API の呼び出しと、旧 localStorage データの移行
     ├── image.js                # 画像の縮小と base64 変換
     ├── validation.js           # 検証（負の金額・重複レシート）と合計金額の計算
     ├── summary.js              # カテゴリ別の集計（グラフ共通）
@@ -130,10 +131,25 @@ const receipts = [
   - 同じ日時・合計金額のレシートが登録済みなら重複警告を出し、登録時に確認ダイアログを出す（時刻はどちらかが未入力なら日付だけで比べる）
 - 登録したレシートと商品を一覧表示・削除する
 - カテゴリ別の円グラフと集計表、カテゴリ別の横棒グラフ（金額の大きい順）、月別の棒グラフを表示する（月で絞り込み可。月別の棒グラフは常に全期間）
-- データは localStorage に保存し、再読み込みしても残る
+- データはサーバーの `data/receipts.json` に保存し、ブラウザを閉じても・ブラウザのデータを消しても残る
+- 以前 localStorage に保存していたデータは、初回表示時に自動でサーバーへ移す（移行後は localStorage から消す）
+
+## 保存データ API
+
+| メソッド | パス | 内容 |
+| --- | --- | --- |
+| GET | `/api/receipts` | 登録済みのレシートをすべて取得 |
+| POST | `/api/receipts` | レシートを1件登録（サーバー側でも形式を検証する） |
+| DELETE | `/api/receipts/:id` | レシートを1件削除 |
+| POST | `/api/receipts/import` | 旧 localStorage データの一括取り込み（同じ ID は飛ばす） |
+| POST | `/api/receipts/read` | レシート画像を Claude で読み取る（保存はしない） |
+
+- `data/` は個人の家計データなので**コミットしない**（`.gitignore` で除外済み）。バックアップしたいときは `data/receipts.json` をコピーする。
+- 書き込みは一時ファイルに書いてから置き換え、同時に来た書き込みは順番に処理する（ファイルが壊れないようにするため）。
+- テストで API を試すときは、環境変数 `DATA_DIR` に一時フォルダを指定し、本物のデータを汚さないようにする。
 
 ## 注意事項
 
 - スマートフォンでも見やすいレスポンシブデザインにする。
-- 保存データの形式を変える場合は、保存済みの古いデータも読めるように配慮する。
+- 保存データの形式を変える場合は、保存済みの古いデータ（`data/receipts.json`）も読めるように配慮する。
 - Claude API の呼び出しは料金がかかるため、テストで何度も呼ぶ場合はユーザーに確認する。
